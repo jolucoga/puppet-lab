@@ -20,7 +20,9 @@ jobs:
           ruby-version: '3.3'
 
       - name: Instalar herramientas
-        run: gem install puppet -v '~> 8' puppet-lint r10k
+        run: |
+          gem install puppet -v '~> 8'
+          gem install puppet-lint r10k
 
       - name: Validar sintaxis de manifiestos
         run: find manifests site-modules -name '*.pp' -exec puppet parser validate {} +
