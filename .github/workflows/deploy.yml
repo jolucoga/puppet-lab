@@ -1,0 +1,46 @@
+name: Validate and Deploy Puppet
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+
+      - name: Instalar herramientas
+        run: gem install puppet -v '~> 8' puppet-lint r10k
+
+      - name: Validar sintaxis de manifiestos
+        run: find manifests site-modules -name '*.pp' -exec puppet parser validate {} +
+
+      - name: Lint de manifiestos
+        run: puppet-lint manifests site-modules
+
+      - name: Validar YAML (hiera y datos)
+        run: ruby -ryaml -e 'ARGV.each { |f| YAML.load_file(f) }' hiera.yaml data/*.yaml
+
+      - name: Validar Puppetfile
+        run: r10k puppetfile check
+
+  deploy:
+    needs: validate
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, puppet]
+    concurrency:
+      group: puppet-deploy
+      cancel-in-progress: false
+    steps:
+      - name: Desplegar entorno main con r10k
+        run: sudo -n /opt/puppetlabs/puppet/bin/r10k deploy environment main -p
