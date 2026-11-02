@@ -1,3 +1,3 @@
 node default {
-  notify { 'Laboratorio Puppet desplegado desde GitHub': }
+  notify { 'Laboratorio Puppet: despliegue automatico verificado': }
 }
